@@ -1,0 +1,16 @@
+#card {
+  width: auto;
+  height: 150px;
+  vertical-align:middle;
+  border-radius: 10px;
+  border: 1px solid black;
+  -ms-interpolation-mode:bicubic
+}
+
+#cloth {
+  width: 97%;
+  height: 80%;
+  background-color: #1EAA18;
+  border: 3px solid #083A06;
+  border-radius: 20px;
+}
