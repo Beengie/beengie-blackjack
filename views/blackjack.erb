@@ -17,19 +17,22 @@
         <% session[:player_cards].each do |card| %>
           <%= card_pic(card) %>
         <% end %>
-    <h5>Your total is <%= add_cards(session[:player_cards]) %><br/>
       
-      Would you like to</h5>
+      <h5>Would you like to?</h5>
   
     <% unless session[:game_message].nil? %>
       <form method='post' action='/play_again'>
-      <input type="submit" name="play_again" value="Play Again" class="btn"/>
-      &nbsp;&nbsp;&nbsp;<input type="submit" name="play_again" value="Quit" class="btn"/>
+      <div class="btn-group">  
+      <button type="submit" name="play_again" value="Play Again" class="btn">Play Again</button>
+      <button type="submit" name="play_again" value="Quit" class="btn">Quit</button>
+      </div>
       </form>
     <% else %>
       <form method='post' action='/hit_stay'>
-      <input type="submit" name="hit_stay" value="Hit" class="btn"/>
-      &nbsp;&nbsp;&nbsp;<input type="submit" name="hit_stay" value="Stay" class="btn"/>
+      <div class="btn-group"> 
+      <button type="submit" name="hit_stay" value="Hit" class="btn">Hit</button>
+      <button type="submit" name="hit_stay" value="Stay" class="btn">Stay</button>
+      </div>
       </form>
     <% end %>
   
@@ -45,5 +48,3 @@
       <% end %>
   </div>
 </div>
-
-

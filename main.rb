@@ -3,11 +3,10 @@ require 'sinatra'
 require 'sinatra/reloader'
 require 'pry'
 
-# TODO: 
-# 1. pull image from helper
-# 2. set betting to work (adding when win and special earnings with blackjack)
-# 3. fix styling
-# 4. improve workflow
+# TODO:
+# 1. Make game over on player_chips = 0
+# 2. change buttons to set bet chips from well (1, 5, 10, 20, 50)
+# 3. Make player_name entry on same page as the well
 
 BLACKJACK_VALUE = 21
 DEALER_STANDS = 17
@@ -18,7 +17,6 @@ helpers do
     value = 0
     flag_ace = false
     ace_count = 0
-    # print add_cards[1]
     add_cards.each do |s, c|
       if hide == false
         if c.is_a? Integer
@@ -48,26 +46,26 @@ helpers do
 
   def need_cards?
     if session[:deck].size == 0 
-      binding.pry
       session[:game_message] = "The deck has been shuffled."
       new_deck
       if session[:player_cards].size > 0
         session[:player_cards].each do |card|
-          session[:deck].delete(session[card])
+          session[:deck].delete(card)
         end
       end
       if session[:dealer_cards].size > 0
         session[:dealer_cards].each do |card|
-          session[:deck].delete(session[card])
+          session[:deck].delete(card)
         end
       end
+      # binding.pry
     end
   end
 
   def stats_table
-    string = "<table><thead><th>Stats</th></thead>"
+    string = "&nbsp;<br/><table><thead><th>Stats</th></thead>"
     string << "<tr><td align='center'>#{session[:deck].size} cards in deck</td></tr>"
-    string << "<tr><td align='center'>Games: #{session[:games]} / Wins: #{session[:wins]}<br/>%#{(session[:wins].to_f/session[:games].to_f) * 100}</td></tr>"
+    string << "<tr><td align='center'>Games: #{session[:games]} / Wins: #{session[:wins]}<br/>%#{((session[:wins].to_f/session[:games].to_f) * 100).round(1)}</td></tr>"
     string << "<tr><td>#{session[:player_name]}'s chips: $#{session[:player_chips].to_s}</td></tr>"
     string << "<tr><td>Current bet: $#{session[:player_bet].to_s}</td></tr>"
     string << "<tr><td>#{session[:player_name]}'s hand: #{add_cards(session[:player_cards]).to_s}</td></tr>"
@@ -86,7 +84,6 @@ helpers do
   end
 
   def card_pic(card)
-    # binding.pry
     return "<img id=\"card\" src=\"images/cards/#{card[0]}_#{card[1]}.jpg\" />"
   end
 
@@ -214,7 +211,6 @@ post '/set_name' do
 end
 
 post '/play_again' do
-  # binding.pry
   if params[:play_again] == "Play Again"
     reset_values
     erb :place_bet
@@ -226,7 +222,6 @@ post '/play_again' do
 end
 
 post '/hit_stay' do
-  # binding.pry
   if params[:hit_stay] == "Hit"
     need_cards?
     session[:player_cards] << session[:deck].pop
@@ -266,9 +261,5 @@ post '/place_bet' do
     end
   end
 
-  erb :blackjack
-end
-
-get '/blackjack' do 
   erb :blackjack
 end
