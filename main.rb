@@ -3,6 +3,13 @@ require 'sinatra'
 require 'sinatra/reloader'
 require 'pry'
 
+# TODO: 
+# 1. pull image from helper
+# 2. set betting to work (adding when win and special earnings with blackjack)
+# 3. fix styling
+# 4. improve workflow
+
+
 set :sessions, true
 
 helpers do
@@ -75,7 +82,44 @@ helpers do
     end
     session[:deck].shuffle!
   end
+
+  def reset_values
+    session[:player_cards] = []
+    session[:dealer_cards] = []
+    session[:game_message] = nil
+  end
 end
+
+def is_blackjack?(card_array) # see if cards are blackjack
+  if add_cards(card_array) == 21 
+    true 
+  else
+    false
+  end
+end
+
+def have_winner(player_cards, dealer_cards)
+  dealers_hand_value = add_cards(dealer_cards)
+  players_hand_value = add_cards(player_cards)
+  if dealers_hand_value > 21
+    return "The dealer busted! You win!"
+    winner = true
+  elsif players_hand_value > 21
+    return "You busted! The dealer wins!"
+    winner = true
+  elsif dealers_hand_value > players_hand_value
+    return "The dealer won."
+    winner = true
+  elsif players_hand_value > dealers_hand_value
+    return "You won!"
+    winner = true
+  elsif players_hand_value ==  dealers_hand_value
+    return "It's a push."
+    winner = true
+  end
+
+end
+
 
 def deal_cards
   session[:player_cards] = []
@@ -89,6 +133,7 @@ end
 get '/' do
   set_chips
   new_deck
+  session[:game_message] = nil
   erb :new_game
 end
 
@@ -97,28 +142,54 @@ post '/set_name' do
   erb :place_bet
 end
 
-get '/test' do
+post '/play_again' do
   # binding.pry
-  "MAF Industries " << params[:some]
+  if params[:play_again] == "Play Again"
+    reset_values
+    erb :place_bet
+  else
+    reset_values
+    session[:game_message] = "Thanks for playing, goodbye"
+    erb :blackjack
+  end
 end
 
-get '/place_bet' do
-  # redirect '/place_bet'
+post '/hit_stay' do
+  # binding.pry
+  if params[:hit_stay] == "Hit"
+    session[:player_cards] << session[:deck].pop
+    if add_cards(session[:player_cards]) > 21
+      session[:game_message] = have_winner(session[:player_cards], session[:dealer_cards])
+    end
+    erb :blackjack
+  else
+    while add_cards(session[:dealer_cards]) < 17
+      session[:dealer_cards] << session[:deck].pop
+    end
+    session[:game_message] = have_winner(session[:player_cards], session[:dealer_cards])
+  end
+  erb :blackjack
 end
 
 post '/place_bet' do
   session[:player_bet] = params[:player_bet].to_i
   session[:player_chips] -= session[:player_bet]
   deal_cards
-  redirect '/blackjack'
+  if is_blackjack?(session[:player_cards]) == true || is_blackjack?(session[:dealer_cards]) == true
+    if is_blackjack?(session[:player_cards]) == true && is_blackjack?(session[:dealer_cards]) == true
+     session[:game_message] = have_winner(session[:player_cards], session[:dealer_cards])
+    else
+      if is_blackjack?(session[:player_cards]) == true
+        session[:game_message] = session[:player_name] << ", you got blackjack!"
+      elsif is_blackjack?(session[:dealer_cards]) == true
+         session[:game_message] = "The dealer got blackjack, you lose."
+      end
+    end
+  end
+
+  erb :blackjack
 end
 
 get '/blackjack' do 
-  # player_turn
-  # dealer_turn
-  # check winner
-  # play_again
-
   erb :blackjack
-  # erb :blackjack, layout: false # removes laout
 end
