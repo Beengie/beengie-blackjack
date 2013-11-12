@@ -1,52 +1,49 @@
 <% unless session[:game_message].nil? %>
-  <%= session[:game_message] %>
-  <% first_card = false %>
-<% else %>
-  <% first_card = true %>
+  <div><h3 style="margin: auto;"><%= session[:game_message] %></h3></div>
 <% end %>
 
-<div><h3></h3></div>
-<div id="cloth"><h4><%= session[:player_name] %>'s cards:</h4>
-<h5>Total chips: $<%= session[:player_chips] %></h5>
-  <div class="row-fluid" style="border: 1px dashed blue">
-    <div class="span6" style="border: 1px solid black">
-  <% session[:player_cards].each do |suit, card| %>
-    <img id="card" src="images/cards/<%= suit %>_<%= card %>.jpg" />
-  <% end %>
-<h5>Your total is <%= add_cards(session[:player_cards]) %><br/>
-<% unless session[:game_message].nil? %>
-  Dealer has: 
+<% if session[:game_won] == false %>
+  <% session[:first_card] = true %>
 <% else %>
-  Dealer is showing: 
-<% end %>
-<%= add_cards(session[:dealer_cards], first_card) %><br/>
-Would you like to</h5>
-
-<% unless session[:game_message].nil? %>
-   <form method='post' action='/play_again'>
-    <input type="submit" name="play_again" value="Play Again" class="btn"/>
-    &nbsp;&nbsp;&nbsp;<input type="submit" name="play_again" value="Quit" class="btn"/>
-  </form>
-<% else %>
-  <form method='post' action='/hit_stay'>
-    <input type="submit" name="hit_stay" value="Hit" class="btn"/>
-    &nbsp;&nbsp;&nbsp;<input type="submit" name="hit_stay" value="Stay" class="btn"/>
-  </form>
+  <% session[:first_card] = false %>
 <% end %>
 
-
-
-
-<h4>Dealer's cards:</h4>
-<div class="row-fluid" style="border: 1px dashed blue">
-  <div class="span6" style="border: 1px solid black">
-  <% session[:dealer_cards].each do |suit, card| %>
-    <% if first_card == true %>
-      <img id="card" src="images/cards/cover.jpg" />
-      <% first_card = false %>
+<div id="cloth">
+  <div class="left">
+    <%= stats_table %>
+  </div>
+  <div class="right">
+    <h4><%= session[:player_name] %>'s cards:</h4>
+        <% session[:player_cards].each do |card| %>
+          <%= card_pic(card) %>
+        <% end %>
+    <h5>Your total is <%= add_cards(session[:player_cards]) %><br/>
+      
+      Would you like to</h5>
+  
+    <% unless session[:game_message].nil? %>
+      <form method='post' action='/play_again'>
+      <input type="submit" name="play_again" value="Play Again" class="btn"/>
+      &nbsp;&nbsp;&nbsp;<input type="submit" name="play_again" value="Quit" class="btn"/>
+      </form>
     <% else %>
-      <img id="card" src="images/cards/<%= suit %>_<%= card %>.jpg" />
+      <form method='post' action='/hit_stay'>
+      <input type="submit" name="hit_stay" value="Hit" class="btn"/>
+      &nbsp;&nbsp;&nbsp;<input type="submit" name="hit_stay" value="Stay" class="btn"/>
+      </form>
     <% end %>
-  <% end %>
-</div></div>
+  
+  
+  <h4>Dealer's cards:</h4>
+      <% session[:dealer_cards].each do |card| %>
+        <% if session[:first_card] == true %>
+          <img id="card" src="images/cards/cover.jpg" />
+          <% session[:first_card] = false %>
+        <% else %>
+          <%= card_pic(card) %>
+        <% end %>
+      <% end %>
+  </div>
 </div>
+
+
