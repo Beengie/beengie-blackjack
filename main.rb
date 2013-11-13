@@ -4,9 +4,9 @@ require 'sinatra/reloader'
 require 'pry'
 
 # TODO:
-# 1. Make game over on player_chips = 0
-# 2. change buttons to set bet chips from well (1, 5, 10, 20, 50)
-# 3. Make player_name entry on same page as the well
+# 1. Make player_name entry on same page as the well
+# 2. Double down
+# 3. Handle split?
 
 BLACKJACK_VALUE = 21
 DEALER_STANDS = 17
@@ -44,6 +44,76 @@ helpers do
     return value
   end
 
+  def player_view
+    if session[:player_cards].size != 0
+      string = "<h4>#{session[:player_name]}'s cards:</h4>"
+      session[:player_cards].each do |card|
+        string << card_pic(card)
+      end
+      return string
+    end
+  end
+
+  def dealer_view
+    if session[:dealer_cards].size != 0
+      string = "<h4>Dealer's cards:</h4>"
+      session[:dealer_cards].each do |card|
+        if session[:first_card] == true
+          string << "<img id='card' src='images/cards/cover.jpg' />"
+          session[:first_card] = false
+        else
+          string << card_pic(card)
+        end
+      end
+      return string
+    end
+  end
+
+  def form_buttons
+    bet_label = ""
+    if session[:player_cards].size != 0
+      string = "<h5>Would you like to?</h5>"
+    else
+      string = "<h5>Place initial bet.</h5>"
+    end
+    mini = ""
+    action = ""
+    if session[:game_won] == false
+      action = "/hit_stay"
+      mini = "<div class='btn-group'>"
+      mini << "<button type='submit' name='hit_stay' value='hit' class='btn'>Hit</button>"
+      mini << "<button type='submit' name='hit_stay' value='stay' class='btn'>Stay</button>"
+      mini << "</div>"
+    elsif session[:game_won] == true && session[:player_chips] == 0
+      action = "/more_money"
+      mini << "<button type='submit' name='more' value='more' class='btn'>$500 more</button>"
+      mini << "<button type='submit' name='more' value='quit' class='btn'>Quit</button>"  
+    elsif session[:game_won] == true || session[:game_won] == "new"
+      if session[:player_chips] >= 50
+        max_bet = 50
+      else
+        max_bet = session[:player_chips]
+      end
+      bet_label = "Place bet"
+      action = "/place_bet"
+      mini = "<div class='input-prepend input-append'>"
+      mini << "<span class='add-on'>$</span>"
+      mini << "<input class='input-mini' name='player_bet' type='number' max='#{max_bet}' value='#{session[:player_bet]}'/>>"
+      mini << "<div class='btn-group'>"
+      mini << "<button type='submit' name='play_again' value='play' class='btn'>#{bet_label}</button>"
+      mini << "<button type='submit' name='play_again' value='quit' class='btn'>Quit</button>"
+      mini << "</div>"
+      mini << "</div>"
+    end
+    string << "<form method='post' action='#{action}'>"
+    string << mini
+    string << "</form>"
+
+    unless session[:game_won] == "bye"
+      return string
+    end
+  end
+
   def need_cards?
     if session[:deck].size == 0 
       session[:game_message] = "The deck has been shuffled."
@@ -58,29 +128,35 @@ helpers do
           session[:deck].delete(card)
         end
       end
-      # binding.pry
     end
   end
 
   def stats_table
+    if session[:games] == 0
+      win_percent = 0
+    else
+      win_percent = ((session[:wins].to_f/session[:games].to_f) * 100).round(1)
+    end
     string = "&nbsp;<br/><table><thead><th>Stats</th></thead>"
     string << "<tr><td align='center'>#{session[:deck].size} cards in deck</td></tr>"
-    string << "<tr><td align='center'>Games: #{session[:games]} / Wins: #{session[:wins]}<br/>%#{((session[:wins].to_f/session[:games].to_f) * 100).round(1)}</td></tr>"
+    string << "<tr><td align='center'>Games: #{session[:games]} / Wins: #{session[:wins]}<br/>%#{win_percent}</td></tr>"
     string << "<tr><td>#{session[:player_name]}'s chips: $#{session[:player_chips].to_s}</td></tr>"
     string << "<tr><td>Current bet: $#{session[:player_bet].to_s}</td></tr>"
-    string << "<tr><td>#{session[:player_name]}'s hand: #{add_cards(session[:player_cards]).to_s}</td></tr>"
-    string << "<tr><td>&nbsp;</td></tr>"
+    string << "<tr><td>&nbsp;</td></tr>"\
 
-    unless session[:game_won] == false
-      mini = "Dealer has: " 
-    else 
-      mini = "Dealer showing: " 
-    end 
-    string << "<tr><td>#{mini} #{add_cards(session[:dealer_cards], session[:first_card]).to_s}</td></tr>"
-
-
+    if session[:player_cards].size != 0
+      string << "<tr><td>#{session[:player_name]}'s hand: #{add_cards(session[:player_cards]).to_s}</td></tr>"
+      unless session[:game_won] == false
+        mini = "Dealer has: " 
+      else 
+        mini = "Dealer showing: " 
+      end 
+      string << "<tr><td>#{mini} #{add_cards(session[:dealer_cards], session[:first_card]).to_s}</td></tr>"
+    end
     string << "</table>"
-    return string
+    unless session[:game_won] == "bye"
+      return string
+    end
   end
 
   def card_pic(card)
@@ -161,29 +237,39 @@ def have_winner
     session[:games] += 1
     session[:game_won] = true
     session[:game_message] = "The dealer busted with #{add_cards(session[:dealer_cards])}! You win #{session[:player_win_hand_chips]} chips... "
+    no_money?
   elsif add_cards(session[:player_cards]) > BLACKJACK_VALUE
     add_chips
     session[:games] += 1
     session[:game_won] = true
     session[:game_message] = "You busted! The dealer wins with #{add_cards(session[:dealer_cards])}."
+    no_money?
   elsif add_cards(session[:dealer_cards]) > add_cards(session[:player_cards])
     session[:games] += 1
     session[:game_won] = true
     session[:game_message] = "The dealer won with #{add_cards(session[:dealer_cards])}."
+    no_money?
   elsif add_cards(session[:player_cards]) > add_cards(session[:dealer_cards])
     add_chips
     session[:wins] += 1
     session[:games] += 1
     session[:game_won] = true
     session[:game_message] = "The dealer stays at #{add_cards(session[:dealer_cards])}. You win #{session[:player_win_hand_chips]} chips..."
+    no_money?
   elsif add_cards(session[:player_cards]) ==  add_cards(session[:dealer_cards])
     add_chips("push")
     session[:games] += 1
     session[:game_won] = true
     session[:game_message] = "It's a push. You receive your #{session[:player_win_hand_chips]} back."
+    no_money?
   end
 end
 
+def no_money?
+  if session[:player_chips] == 0
+    session[:game_message] << "<br/>You are out of chips! The house took it all. Thanks for the money."
+  end
+end
 
 def deal_cards
   need_cards?
@@ -207,26 +293,34 @@ end
 
 post '/set_name' do
   session[:player_name] = params[:player_name]
-  erb :place_bet
+  session[:game_won] = "new"
+  erb :blackjack
 end
 
-post '/play_again' do
-  if params[:play_again] == "Play Again"
-    reset_values
-    erb :place_bet
+post '/more_money' do
+  if params[:more] == "more"
+  reset_values
+  set_chips
+  session[:game_won] = "new"
+  erb :blackjack
   else
-    reset_values
-    session[:game_message] = "Thanks for playing, goodbye"
-    erb :blackjack
+    redirect '/goodbye'
   end
 end
 
+get '/goodbye' do
+  reset_values
+  session[:game_message] = "Thanks for playing, goodbye"
+  session[:game_won] = "bye"
+  erb :blackjack
+end
+
 post '/hit_stay' do
-  if params[:hit_stay] == "Hit"
+  if params[:hit_stay] == "hit"
     need_cards?
     session[:player_cards] << session[:deck].pop
     if add_cards(session[:player_cards]) > BLACKJACK_VALUE
-      session[:game_message] = have_winner
+      have_winner
     end
     erb :blackjack
   else
@@ -234,32 +328,41 @@ post '/hit_stay' do
       need_cards?
       session[:dealer_cards] << session[:deck].pop
     end
-    session[:game_message] = have_winner
+    have_winner
   end
   erb :blackjack
 end
 
 post '/place_bet' do
-  session[:player_bet] = params[:player_bet].to_i
-  session[:player_chips] -= session[:player_bet]
-  deal_cards
-  if is_blackjack?(session[:player_cards]) == true || is_blackjack?(session[:dealer_cards]) == true
-    if is_blackjack?(session[:player_cards]) == true && is_blackjack?(session[:dealer_cards]) == true
-     session[:game_message] = have_winner
-    else
-      if is_blackjack?(session[:player_cards]) == true
-        add_chips("blackjack")
-        session[:wins] += 1
-        session[:games] += 1
-        session[:game_won] = true
-        session[:game_message] = session[:player_name] + ", you got blackjack!  You win #{session[:player_win_hand_chips]} chips..."
-      elsif is_blackjack?(session[:dealer_cards]) == true
-        session[:games] += 1
-        session[:game_won] = true
-        session[:game_message] = "The dealer got blackjack, you lose."
+  if params[:play_again] == "play"
+    session[:game_won] = false
+    session[:player_cards] = []
+    session[:dealer_cards] = []
+    session[:game_message] = nil
+    session[:player_bet] = params[:player_bet].to_i
+    session[:player_chips] -= session[:player_bet]
+    deal_cards
+    if is_blackjack?(session[:player_cards]) == true || is_blackjack?(session[:dealer_cards]) == true
+      if is_blackjack?(session[:player_cards]) == true && is_blackjack?(session[:dealer_cards]) == true
+        have_winner
+      else
+        if is_blackjack?(session[:player_cards]) == true
+          add_chips("blackjack")
+          session[:wins] += 1
+          session[:games] += 1
+          session[:game_won] = true
+          session[:game_message] = session[:player_name] + ", you got blackjack!  You win #{session[:player_win_hand_chips]} chips..."
+          no_money?
+        elsif is_blackjack?(session[:dealer_cards]) == true
+          session[:games] += 1
+          session[:game_won] = true
+          session[:game_message] = "The dealer got blackjack, you lose."
+          no_money?
+        end
       end
     end
-  end
-
   erb :blackjack
+  else
+    redirect '/goodbye'
+  end
 end

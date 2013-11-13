@@ -1,7 +1,6 @@
 <% unless session[:game_message].nil? %>
   <div><h3 style="margin: auto;"><%= session[:game_message] %></h3></div>
 <% end %>
-
 <% if session[:game_won] == false %>
   <% session[:first_card] = true %>
 <% else %>
@@ -13,38 +12,12 @@
     <%= stats_table %>
   </div>
   <div class="right">
-    <h4><%= session[:player_name] %>'s cards:</h4>
-        <% session[:player_cards].each do |card| %>
-          <%= card_pic(card) %>
-        <% end %>
+  <%= player_view %>
+
       
-      <h5>Would you like to?</h5>
+  <%= form_buttons %>
+
+  <%= dealer_view %>
   
-    <% unless session[:game_message].nil? %>
-      <form method='post' action='/play_again'>
-      <div class="btn-group">  
-      <button type="submit" name="play_again" value="Play Again" class="btn">Play Again</button>
-      <button type="submit" name="play_again" value="Quit" class="btn">Quit</button>
-      </div>
-      </form>
-    <% else %>
-      <form method='post' action='/hit_stay'>
-      <div class="btn-group"> 
-      <button type="submit" name="hit_stay" value="Hit" class="btn">Hit</button>
-      <button type="submit" name="hit_stay" value="Stay" class="btn">Stay</button>
-      </div>
-      </form>
-    <% end %>
-  
-  
-  <h4>Dealer's cards:</h4>
-      <% session[:dealer_cards].each do |card| %>
-        <% if session[:first_card] == true %>
-          <img id="card" src="images/cards/cover.jpg" />
-          <% session[:first_card] = false %>
-        <% else %>
-          <%= card_pic(card) %>
-        <% end %>
-      <% end %>
   </div>
 </div>
