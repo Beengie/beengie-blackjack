@@ -4,4 +4,5 @@ Version 1.0 - by Beengie
 -- Currently using sinatra windows version --
 1. Make sure the 'sinatra' gem is installed.
 2. Make sure the 'sinatra-contrib'
+3. Run with 'ruby main.rb'
 
