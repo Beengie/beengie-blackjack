@@ -120,8 +120,8 @@ helpers do
       mini << "</div>"
     elsif session[:game_won] == true && session[:player_chips] == 0
       action = "/more_money"
-      mini << "<button type='submit' name='more' value='more' class='btn'>$500 more</button>"
-      mini << "<button type='submit' name='more' value='quit' class='btn'>Quit</button>"  
+      mini << "<button id='more' type='submit' name='more' value='more' class='btn'>$500 more</button>"
+      mini << "<button id='quit' type='submit' name='more' value='quit' class='btn'>Quit</button>"  
     elsif session[:game_won] == true || session[:game_won] == "new"
       if session[:player_chips] >= 50
         max_bet = 50
@@ -132,10 +132,10 @@ helpers do
       action = "/place_bet"
       mini = "<div class='input-prepend input-append'>"
       mini << "<span class='add-on'>$</span>"
-      mini << "<input class='input-mini' name='player_bet' type='number' max='#{max_bet}' value='#{session[:player_bet]}'/>>"
+      mini << "<input class='input-mini' name='player_bet' type='number' min='1' max='#{max_bet}' value='#{session[:player_bet]}'/>>"
       mini << "<div class='btn-group'>"
-      mini << "<button type='submit' name='play_again' value='play' class='btn'>#{bet_label}</button>"
-      mini << "<button type='submit' name='play_again' value='quit' class='btn'>Quit</button>"
+      mini << "<button id='again_yes' type='submit' name='play_again' value='play' class='btn'>#{bet_label}</button>"
+      mini << "<button id='quit' type='submit' name='play_again' value='quit' class='btn'>Quit</button>"
       mini << "</div>"
       mini << "</div>"
     end
