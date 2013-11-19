@@ -10,6 +10,7 @@ require 'pry'
 
 BLACKJACK_VALUE = 21
 DEALER_STANDS = 17
+SHOW_ENVIRONMENT = true
 set :sessions, true
 
 helpers do
@@ -43,20 +44,52 @@ helpers do
     end
     return value
   end
+ 
+  def show_env
+    if SHOW_ENVIRONMENT
+      string = "<div class=\"dropdown\">"
+      string << "<a class=\"btn dropdown-toggle\" data-toggle=\"dropdown\" href=\"#\">Click to see environment details <span class=\"caret\"></span></a>"
+      string << "<ul id=\"menu1\" class=\"dropdown-menu\" role=\"menu\" aria-labelledby=\"dLabel\">"
+      env.each do |k, v|
+        if v.is_a?(Hash)
+          v.each do |l, m|
+            unless m.is_a?(Array)
+              string << "<li role=\"presentation\" id=\"dLabel\">#{l}: #{m}</li>"
+            else
+              string << "<li>#{l}:</li>"
+
+              string << "<ul>"
+              m.each do |p|
+                string << "<li>#{p}</li>"
+              end
+              string << "</ul>"
+            end
+          end
+        else
+          string << "<li>#{k}: #{v}</li>"
+        end
+      end
+      string << "</ul></div>"
+      return string
+    end
+  end
 
   def player_view
     if session[:player_cards].size != 0
-      string = "<h4>#{session[:player_name]}'s cards:</h4>"
+      string = "<div id='player_div'>"
+      string << "<h4>#{session[:player_name]}'s cards:</h4>"
       session[:player_cards].each do |card|
         string << card_pic(card)
       end
+      string << "</div>"
       return string
     end
   end
 
   def dealer_view
     if session[:dealer_cards].size != 0
-      string = "<h4>Dealer's cards:</h4>"
+      string = "<div id='dealer_div'>"
+      string << "<h4>Dealer's cards:</h4>"
       session[:dealer_cards].each do |card|
         if session[:first_card] == true
           string << "<img id='card' src='images/cards/cover.jpg' />"
@@ -65,6 +98,7 @@ helpers do
           string << card_pic(card)
         end
       end
+      string << "</div>"
       return string
     end
   end
@@ -81,8 +115,8 @@ helpers do
     if session[:game_won] == false
       action = "/hit_stay"
       mini = "<div class='btn-group'>"
-      mini << "<button type='submit' name='hit_stay' value='hit' class='btn'>Hit</button>"
-      mini << "<button type='submit' name='hit_stay' value='stay' class='btn'>Stay</button>"
+      mini << "<button id='hit_button' type='submit' name='hit_stay' value='hit' class='btn'>Hit</button>"
+      mini << "<button id='stay_button' type='submit' name='hit_stay' value='stay' class='btn'>Stay</button>"
       mini << "</div>"
     elsif session[:game_won] == true && session[:player_chips] == 0
       action = "/more_money"
@@ -105,7 +139,7 @@ helpers do
       mini << "</div>"
       mini << "</div>"
     end
-    string << "<form method='post' action='#{action}'>"
+    string << "<form id='form_btns' method='post' action='#{action}'>"
     string << mini
     string << "</form>"
 

@@ -1,3 +1,4 @@
+<div id="game">
 <% unless session[:game_message].nil? %>
   <div><h3 style="margin: auto;"><%= session[:game_message] %></h3></div>
 <% end %>
@@ -20,4 +21,7 @@
   <%= dealer_view %>
   
   </div>
+</div>
+
+<%= show_env %>
 </div>
